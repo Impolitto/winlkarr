@@ -1,0 +1,41 @@
+services:
+  api:
+    build: .
+    ports:
+      - "4000:4000"
+    environment:
+      NODE_ENV: production
+      PORT: 4000
+      MONGODB_URI: mongodb://mongo:27017/bus_tracking
+      JWT_SECRET: ${JWT_SECRET:-change_me_in_production_use_long_random}
+      JWT_EXPIRES_IN: 7d
+      CORS_ORIGIN: "*"
+      SOCKET_CORS_ORIGIN: "*"
+      # Optional: set to redis://redis:6379 when using the redis service below
+      REDIS_URL: ${REDIS_URL:-}
+    depends_on:
+      mongo:
+        condition: service_healthy
+
+  mongo:
+    image: mongo:7
+    volumes:
+      - mongo_data:/data/db
+    ports:
+      - "27017:27017"
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping')"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+  # Optional caching for nearest-bus results — enable with: docker compose --profile cache up
+  redis:
+    image: redis:7-alpine
+    profiles: [cache]
+    ports:
+      - "6379:6379"
+
+volumes:
+  mongo_data:
