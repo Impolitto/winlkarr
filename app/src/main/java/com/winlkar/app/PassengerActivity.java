@@ -63,18 +63,23 @@ public class PassengerActivity extends AppCompatActivity implements OnMapReadyCa
         googleMap = map;
         googleMap.getUiSettings().setZoomControlsEnabled(true);
 
+        // Move zoom controls and Google logo to be visible above the bottom sheet and below top card
+        int topPadding = (int) (100 * getResources().getDisplayMetrics().density);
+        int bottomPadding = (int) (100 * getResources().getDisplayMetrics().density);
+        googleMap.setPadding(0, topPadding, 0, bottomPadding);
+
         drawStations();
         attachTripsRealtimeListener();
 
-        LatLng defaultCenter = new LatLng(33.5731, -7.5898);
-        googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(defaultCenter, 11f));
+        LatLng defaultCenter = new LatLng(35.8256, 10.6084);
+        googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(defaultCenter, 12f));
     }
 
     private void initializeStations() {
-        stations.add(new Station("Station A", new LatLng(33.5731, -7.5898)));
-        stations.add(new Station("Station B", new LatLng(33.5890, -7.6030)));
-        stations.add(new Station("Station C", new LatLng(33.5585, -7.6205)));
-        stations.add(new Station("Station D", new LatLng(33.5400, -7.5802)));
+        stations.add(new Station("Sousse Centrale", new LatLng(35.8282, 10.6358)));
+        stations.add(new Station("Sousse Riadh", new LatLng(35.7955, 10.5843)));
+        stations.add(new Station("Hammam Sousse", new LatLng(35.8594, 10.5985)));
+        stations.add(new Station("Port El Kantaoui", new LatLng(35.8947, 10.5982)));
     }
 
     private void drawStations() {

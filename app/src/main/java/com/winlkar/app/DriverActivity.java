@@ -324,6 +324,10 @@ public class DriverActivity extends AppCompatActivity implements OnMapReadyCallb
         googleMap = map;
         googleMap.getUiSettings().setZoomControlsEnabled(true);
 
+        // Move zoom controls and Google logo to be visible below the top card
+        int topPadding = (int) (280 * getResources().getDisplayMetrics().density);
+        googleMap.setPadding(0, topPadding, 0, 0);
+
         if (hasLocationPermission()) {
             if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
                 googleMap.setMyLocationEnabled(true);
@@ -332,8 +336,8 @@ public class DriverActivity extends AppCompatActivity implements OnMapReadyCallb
             requestLocationPermission();
         }
 
-        LatLng defaultCenter = new LatLng(33.5731, -7.5898);
-        googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(defaultCenter, 11f));
+        LatLng defaultCenter = new LatLng(35.8256, 10.6084);
+        googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(defaultCenter, 12f));
     }
 
     @Override
