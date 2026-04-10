@@ -21,6 +21,12 @@
             android:value="@string/maps_api_key" />
 
         <activity
+            android:name=".LoginActivity"
+            android:exported="false" />
+        <activity
+            android:name=".AdminActivity"
+            android:exported="false" />
+        <activity
             android:name=".PassengerActivity"
             android:exported="false" />
         <activity

@@ -99,6 +99,16 @@
                 app:cornerRadius="16dp"
                 app:icon="@android:drawable/ic_menu_directions" />
 
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/adminButton"
+                style="@style/Widget.Material3.Button.TextButton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:text="Admin Access"
+                android:textColor="?attr/colorOnSurfaceVariant"
+                app:icon="@android:drawable/ic_lock_lock" />
+
         </LinearLayout>
     </com.google.android.material.card.MaterialCardView>
 
