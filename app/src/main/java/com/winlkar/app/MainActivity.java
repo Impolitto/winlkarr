@@ -22,5 +22,8 @@ public class MainActivity extends AppCompatActivity {
 
         binding.passengerButton.setOnClickListener(v ->
                 startActivity(new Intent(this, PassengerActivity.class)));
+
+        binding.adminButton.setOnClickListener(v ->
+                startActivity(new Intent(this, AdminActivity.class)));
     }
 }

@@ -1,4 +1,6 @@
 <resources>
     <string name="app_name">WinLkar</string>
     <string name="maps_api_key">AIzaSyBddOR6ZnEGFd8m_y1icq76ZZnEDLxRzv8</string>
+    <!-- Base URL for the WinLkar REST API. Use 10.0.2.2 for the Android emulator pointing to localhost. -->
+    <string name="api_base_url">http://10.0.2.2:4000/api</string>
 </resources>
