@@ -19,16 +19,20 @@ public class LoginActivity extends AppCompatActivity {
         setContentView(binding.getRoot());
 
         binding.loginButton.setOnClickListener(v -> {
-            String adminId = binding.adminIdInput.getText().toString();
-            String password = binding.passwordInput.getText().toString();
+            String adminId = binding.adminIdInput.getText() != null 
+                ? binding.adminIdInput.getText().toString().trim() : "";
+            String password = binding.passwordInput.getText() != null 
+                ? binding.passwordInput.getText().toString().trim() : "";
 
-            // Simple hardcoded check for demonstration
-            // In a real app, use Firebase Auth
-            if ("admin".equals(adminId) && "admin123".equals(password)) {
-                startActivity(new Intent(this, AdminActivity.class));
+            android.util.Log.d("LoginActivity", "Login attempt: ID=" + adminId + " PW=" + password);
+
+            if ("admin".equalsIgnoreCase(adminId) && "admin123".equals(password)) {
+                Intent intent = new Intent(this, AdminActivity.class);
+                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+                startActivity(intent);
                 finish();
             } else {
-                Toast.makeText(this, "Invalid credentials", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, "Invalid credentials. Use admin/admin123", Toast.LENGTH_LONG).show();
             }
         });
     }
