@@ -39,7 +39,9 @@ import com.google.firebase.FirebaseApp;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.winlkar.app.databinding.ActivityDriverBinding;
+import com.winlkar.app.model.Station;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -67,6 +69,15 @@ public class DriverActivity extends AppCompatActivity implements OnMapReadyCallb
     private String currentBusId;
     private boolean isTripActive;
     private boolean firebaseReady;
+    private List<Station> stations = new ArrayList<>();
+    private boolean pickingStart = false;
+    private boolean pickingEnd = false;
+    private String selectedStartName;
+    private String selectedEndName;
+    private LatLng selectedStartLatLng;
+    private LatLng selectedEndLatLng;
+    private Marker startMarker;
+    private Marker endMarker;
 
     // Use standard StartActivityForResult contract as the custom Places contract is not available
     private final ActivityResultLauncher<Intent> startPlaceLauncher =
@@ -97,6 +108,7 @@ public class DriverActivity extends AppCompatActivity implements OnMapReadyCallb
         binding = ActivityDriverBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
 
+        stations = Station.getDefaultStations();
         initializeSdkClients();
         initializeMap();
         initializeUi();
@@ -128,14 +140,39 @@ public class DriverActivity extends AppCompatActivity implements OnMapReadyCallb
                     return;
                 }
 
-                LatLng latLng = new LatLng(location.getLatitude(), location.getLongitude());
-                updateDriverMarker(latLng);
+                LatLng rawLatLng = new LatLng(location.getLatitude(), location.getLongitude());
+                
+                // Smart Filter: If GPS is in California (10,000km away), ignore it and use the station loc
+                LatLng sousseCenter = new LatLng(35.8256, 10.6084);
+                double distanceToSousse = calculateDistance(rawLatLng, sousseCenter);
+                
+                LatLng filteredLatLng;
+                if (distanceToSousse > 1000) { // If more than 1000km away, it's the emulator default
+                    if (isTripActive) {
+                        filteredLatLng = startPlace != null ? startPlace.getLatLng() : selectedStartLatLng;
+                    } else {
+                        // If not in a trip, just show them where they are but don't broadcast
+                        updateDriverMarker(rawLatLng);
+                        return; 
+                    }
+                } else {
+                    filteredLatLng = rawLatLng;
+                }
 
-                if (isTripActive) {
-                    publishLiveLocation(latLng);
+                if (filteredLatLng != null) {
+                    updateDriverMarker(filteredLatLng);
+                    if (isTripActive) {
+                        publishLiveLocation(filteredLatLng);
+                    }
                 }
             }
         };
+    }
+
+    private double calculateDistance(LatLng a, LatLng b) {
+        float[] results = new float[1];
+        android.location.Location.distanceBetween(a.latitude, a.longitude, b.latitude, b.longitude, results);
+        return results[0] / 1000.0; // km
     }
 
     private void initializeMap() {
@@ -147,8 +184,16 @@ public class DriverActivity extends AppCompatActivity implements OnMapReadyCallb
     }
 
     private void initializeUi() {
-        binding.selectStartButton.setOnClickListener(v -> openPlacePicker(true));
-        binding.selectEndButton.setOnClickListener(v -> openPlacePicker(false));
+        binding.selectStartButton.setOnClickListener(v -> {
+            pickingStart = true;
+            pickingEnd = false;
+            Toast.makeText(this, "Tap a station on the map to set Start", Toast.LENGTH_SHORT).show();
+        });
+        binding.selectEndButton.setOnClickListener(v -> {
+            pickingEnd = true;
+            pickingStart = false;
+            Toast.makeText(this, "Tap a station on the map to set End", Toast.LENGTH_SHORT).show();
+        });
 
         binding.startTripButton.setOnClickListener(v -> startTrip());
         binding.endTripButton.setOnClickListener(v -> endTrip());
@@ -187,8 +232,8 @@ public class DriverActivity extends AppCompatActivity implements OnMapReadyCallb
     }
 
     private void refreshRouteSummary() {
-        String from = startPlace != null ? startPlace.getName() : "?";
-        String to = endPlace != null ? endPlace.getName() : "?";
+        String from = startPlace != null ? startPlace.getName() : (selectedStartName != null ? selectedStartName : "?");
+        String to = endPlace != null ? endPlace.getName() : (selectedEndName != null ? selectedEndName : "?");
         binding.routeSummaryText.setText(String.format(Locale.US, "Route: %s -> %s", from, to));
     }
 
@@ -202,7 +247,10 @@ public class DriverActivity extends AppCompatActivity implements OnMapReadyCallb
             return;
         }
 
-        if (startPlace == null || endPlace == null) {
+        String from = startPlace != null ? startPlace.getName() : selectedStartName;
+        String to = endPlace != null ? endPlace.getName() : selectedEndName;
+
+        if (from == null || to == null) {
             Toast.makeText(this, "Please select start and end points", Toast.LENGTH_SHORT).show();
             return;
         }
@@ -211,6 +259,8 @@ public class DriverActivity extends AppCompatActivity implements OnMapReadyCallb
             requestLocationPermission();
             return;
         }
+
+        zoomToFitRoute();
 
         String typedBusId = binding.busIdInput.getText() == null
                 ? ""
@@ -226,6 +276,13 @@ public class DriverActivity extends AppCompatActivity implements OnMapReadyCallb
         binding.endTripButton.setEnabled(true);
 
         startLocationUpdates();
+
+        // Broadcast initial location immediately so passengers see the bus right away
+        LatLng initialLoc = startPlace != null ? startPlace.getLatLng() : selectedStartLatLng;
+        if (initialLoc != null) {
+            publishLiveLocation(initialLoc);
+        }
+
         Toast.makeText(this, "Trip started for " + currentBusId, Toast.LENGTH_SHORT).show();
     }
 
@@ -251,17 +308,39 @@ public class DriverActivity extends AppCompatActivity implements OnMapReadyCallb
             return;
         }
 
+        String from = startPlace != null ? startPlace.getName() : selectedStartName;
+        String to = endPlace != null ? endPlace.getName() : selectedEndName;
+
         Map<String, Object> payload = new HashMap<>();
         payload.put("busId", currentBusId);
-        payload.put("routeFrom", startPlace.getName());
-        payload.put("routeTo", endPlace.getName());
-        payload.put("routeDescription", startPlace.getName() + " -> " + endPlace.getName());
+        payload.put("routeFrom", from);
+        payload.put("routeTo", to);
+        payload.put("routeDescription", from + " -> " + to);
         payload.put("lat", latLng.latitude);
         payload.put("lng", latLng.longitude);
         payload.put("lastUpdated", System.currentTimeMillis());
         payload.put("active", true);
 
         activeTripsRef.child(currentBusId).setValue(payload);
+    }
+
+    private void zoomToFitRoute() {
+        if (googleMap == null) return;
+
+        com.google.android.gms.maps.model.LatLngBounds.Builder builder = new com.google.android.gms.maps.model.LatLngBounds.Builder();
+        boolean hasPoints = false;
+
+        LatLng start = startPlace != null ? startPlace.getLatLng() : selectedStartLatLng;
+        LatLng end = endPlace != null ? endPlace.getLatLng() : selectedEndLatLng;
+
+        if (start != null) { builder.include(start); hasPoints = true; }
+        if (end != null) { builder.include(end); hasPoints = true; }
+        if (driverMarker != null) { builder.include(driverMarker.getPosition()); hasPoints = true; }
+
+        if (hasPoints) {
+            int padding = 200; // offset from edges of the map in pixels
+            googleMap.animateCamera(CameraUpdateFactory.newLatLngBounds(builder.build(), padding));
+        }
     }
 
     private void updateDriverMarker(LatLng latLng) {
@@ -274,11 +353,10 @@ public class DriverActivity extends AppCompatActivity implements OnMapReadyCallb
                     .position(latLng)
                     .title("Current bus location")
                     .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE)));
-            googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng, 15f));
         } else {
             driverMarker.setPosition(latLng);
-            googleMap.animateCamera(CameraUpdateFactory.newLatLng(latLng));
         }
+        // Removed forced camera snap here to allow user to see the route
     }
 
     private void startLocationUpdates() {
@@ -336,8 +414,58 @@ public class DriverActivity extends AppCompatActivity implements OnMapReadyCallb
             requestLocationPermission();
         }
 
+        drawStations();
+
+        googleMap.setOnMarkerClickListener(marker -> {
+            Object tag = marker.getTag();
+            if (tag instanceof Station) {
+                Station station = (Station) tag;
+                handleStationSelection(station);
+                return true;
+            }
+            return false;
+        });
+
         LatLng defaultCenter = new LatLng(35.8256, 10.6084);
         googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(defaultCenter, 12f));
+    }
+
+    private void drawStations() {
+        if (googleMap == null) return;
+        for (Station station : stations) {
+            Marker m = googleMap.addMarker(new MarkerOptions()
+                    .position(station.location)
+                    .title(station.name)
+                    .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_ORANGE)));
+            if (m != null) m.setTag(station);
+        }
+    }
+
+    private void handleStationSelection(Station station) {
+        if (pickingStart) {
+            selectedStartName = station.name;
+            selectedStartLatLng = station.location;
+            startPlace = null; // Clear place picker selection if any
+            if (startMarker != null) startMarker.remove();
+            startMarker = googleMap.addMarker(new MarkerOptions()
+                    .position(station.location)
+                    .title("Start: " + station.name)
+                    .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_GREEN)));
+            pickingStart = false;
+            Toast.makeText(this, "Start set to: " + station.name, Toast.LENGTH_SHORT).show();
+        } else if (pickingEnd) {
+            selectedEndName = station.name;
+            selectedEndLatLng = station.location;
+            endPlace = null; // Clear place picker selection if any
+            if (endMarker != null) endMarker.remove();
+            endMarker = googleMap.addMarker(new MarkerOptions()
+                    .position(station.location)
+                    .title("End: " + station.name)
+                    .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED)));
+            pickingEnd = false;
+            Toast.makeText(this, "End set to: " + station.name, Toast.LENGTH_SHORT).show();
+        }
+        refreshRouteSummary();
     }
 
     @Override
