@@ -27,6 +27,11 @@ import com.google.android.gms.maps.model.JointType;
 import com.google.android.gms.maps.model.Polyline;
 import com.google.android.gms.maps.model.PolylineOptions;
 import com.google.android.gms.maps.model.RoundCap;
+import com.google.android.gms.maps.model.MapStyleOptions;
+import android.util.Log;
+import android.view.View;
+import android.view.animation.Animation;
+import android.view.animation.AnimationUtils;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.Scanner;
@@ -34,8 +39,12 @@ import org.json.JSONObject;
 import org.json.JSONArray;
 import com.winlkar.app.databinding.ActivityPassengerBinding;
 import com.winlkar.app.model.ActiveTrip;
+import com.winlkar.app.model.Feedback;
 import com.winlkar.app.model.Station;
 
+import android.widget.EditText;
+import android.widget.Toast;
+import androidx.appcompat.app.AlertDialog;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -72,11 +81,96 @@ public class PassengerActivity extends AppCompatActivity implements OnMapReadyCa
         if (mapFragment != null) {
             mapFragment.getMapAsync(this);
         }
+
+        binding.sendFeedbackButton.setOnClickListener(v -> showFeedbackDialog());
+        binding.topFeedbackButton.setOnClickListener(v -> showFeedbackDialog());
+        binding.searchStationButton.setOnClickListener(v -> showStationSearchDialog());
+        binding.myLocationButton.setOnClickListener(v -> {
+            if (googleMap != null) {
+                LatLng sousseCenter = new LatLng(35.8256, 10.6084);
+                googleMap.animateCamera(CameraUpdateFactory.newLatLngZoom(sousseCenter, 13f));
+            }
+        });
+
+        applyEntryAnimations();
+    }
+
+    private void applyEntryAnimations() {
+        Animation slideDown = AnimationUtils.loadAnimation(this, android.R.anim.slide_in_left);
+        slideDown.setDuration(800);
+        // binding.topCard.startAnimation(slideDown); // Removed because topCard ID is missing in layout
+    }
+
+    private void showStationSearchDialog() {
+        String[] stationNames = new String[stations.size()];
+        for (int i = 0; i < stations.size(); i++) {
+            stationNames[i] = stations.get(i).name;
+        }
+
+        new AlertDialog.Builder(this)
+                .setTitle("Search Station")
+                .setItems(stationNames, (dialog, which) -> {
+                    Station selected = stations.get(which);
+                    if (googleMap != null) {
+                        googleMap.animateCamera(CameraUpdateFactory.newLatLngZoom(selected.location, 15f));
+                        showStationDetails(selected);
+                    }
+                })
+                .show();
+    }
+
+    private void showFeedbackDialog() {
+        EditText feedbackInput = new EditText(this);
+        feedbackInput.setHint("Describe the issue or give feedback...");
+        int padding = (int) (16 * getResources().getDisplayMetrics().density);
+        feedbackInput.setPadding(padding, padding, padding, padding);
+
+        new AlertDialog.Builder(this)
+                .setTitle("Report / Feedback")
+                .setView(feedbackInput)
+                .setPositiveButton("Send", (dialog, which) -> {
+                    String message = feedbackInput.getText().toString().trim();
+                    if (!message.isEmpty()) {
+                        sendFeedback(message);
+                    }
+                })
+                .setNegativeButton("Cancel", null)
+                .show();
+    }
+
+    private void sendFeedback(String message) {
+        DatabaseReference feedbackRef = FirebaseDatabase.getInstance().getReference("feedbacks");
+        String feedbackId = feedbackRef.push().getKey();
+
+        Feedback feedback = new Feedback(feedbackId, "Passenger", "Passenger", message, System.currentTimeMillis());
+
+        if (feedbackId != null) {
+            feedbackRef.child(feedbackId).setValue(feedback)
+                    .addOnSuccessListener(aVoid -> {
+                        Toast.makeText(this, "Feedback sent to admin", Toast.LENGTH_SHORT).show();
+                    })
+                    .addOnFailureListener(e -> {
+                        Toast.makeText(this, "Failed to send feedback", Toast.LENGTH_SHORT).show();
+                    });
+        }
     }
 
     @Override
     public void onMapReady(@NonNull GoogleMap map) {
         googleMap = map;
+
+        /*
+        try {
+            boolean success = googleMap.setMapStyle(
+                    MapStyleOptions.loadRawResourceStyle(this, R.raw.map_style));
+            if (!success) {
+                Log.e("MapStyle", "Style parsing failed.");
+            }
+        } catch (android.content.res.Resources.NotFoundException e) {
+            Log.e("MapStyle", "Can't find style. Error: ", e);
+        }
+        */
+
         googleMap.getUiSettings().setZoomControlsEnabled(true);
 
         // Move zoom controls and Google logo to be visible above the bottom sheet and below top card

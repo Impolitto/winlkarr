@@ -23,9 +23,11 @@ import com.winlkar.app.databinding.ActivityAdminBinding;
 import com.winlkar.app.databinding.ItemActiveTripBinding;
 import com.winlkar.app.databinding.ItemBusBinding;
 import com.winlkar.app.databinding.ItemDriverBinding;
+import com.winlkar.app.databinding.ItemFeedbackBinding;
 import com.winlkar.app.model.ActiveTrip;
 import com.winlkar.app.model.Bus;
 import com.winlkar.app.model.Driver;
+import com.winlkar.app.model.Feedback;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -42,6 +44,9 @@ public class AdminActivity extends AppCompatActivity {
     private List<ActiveTrip> tripList = new ArrayList<>();
     private List<Bus> busList = new ArrayList<>();
     private List<Driver> driverList = new ArrayList<>();
+    private FeedbackAdapter feedbackAdapter;
+    private List<Feedback> feedbackList = new ArrayList<>();
+    private DatabaseReference feedbacksRef;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -58,12 +63,14 @@ public class AdminActivity extends AppCompatActivity {
         activeTripsRef = FirebaseDatabase.getInstance().getReference("activeTrips");
         busesRef = FirebaseDatabase.getInstance().getReference("buses");
         driversRef = FirebaseDatabase.getInstance().getReference("drivers");
+        feedbacksRef = FirebaseDatabase.getInstance().getReference("feedbacks");
 
         setupRecyclerView();
         setupTabs();
         loadActiveTrips();
         loadBuses();
         loadDrivers();
+        loadFeedbacks();
 
         binding.addBusButton.setOnClickListener(v -> showAddBusDialog());
         binding.addDriverButton.setOnClickListener(v -> showAddDriverDialog());
@@ -126,6 +133,13 @@ public class AdminActivity extends AppCompatActivity {
         });
         binding.driversRecyclerView.setLayoutManager(new LinearLayoutManager(this));
         binding.driversRecyclerView.setAdapter(driverAdapter);
+
+        feedbackAdapter = new FeedbackAdapter(feedbackList, feedbackId -> {
+            feedbacksRef.child(feedbackId).removeValue()
+                    .addOnSuccessListener(aVoid -> Toast.makeText(this, "Feedback removed", Toast.LENGTH_SHORT).show());
+        });
+        binding.feedbacksRecyclerView.setLayoutManager(new LinearLayoutManager(this));
+        binding.feedbacksRecyclerView.setAdapter(feedbackAdapter);
     }
 
     private void loadActiveTrips() {
@@ -173,6 +187,7 @@ public class AdminActivity extends AppCompatActivity {
     }
 
     private void loadDrivers() {
+        driverList.clear();
         driversRef.addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot) {
@@ -190,6 +205,27 @@ public class AdminActivity extends AppCompatActivity {
             @Override
             public void onCancelled(@NonNull DatabaseError error) {
                 Toast.makeText(AdminActivity.this, "Failed to load drivers", Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
+
+    private void loadFeedbacks() {
+        feedbacksRef.addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+                feedbackList.clear();
+                for (DataSnapshot postSnapshot : snapshot.getChildren()) {
+                    Feedback feedback = postSnapshot.getValue(Feedback.class);
+                    if (feedback != null) {
+                        feedbackList.add(0, feedback); // Newest first
+                    }
+                }
+                feedbackAdapter.notifyDataSetChanged();
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {
+                Toast.makeText(AdminActivity.this, "Failed to load feedbacks", Toast.LENGTH_SHORT).show();
             }
         });
     }
@@ -375,6 +411,57 @@ public class AdminActivity extends AppCompatActivity {
         static class ViewHolder extends RecyclerView.ViewHolder {
             ItemDriverBinding binding;
             ViewHolder(ItemDriverBinding binding) {
+                super(binding.getRoot());
+                this.binding = binding;
+            }
+        }
+    }
+
+    private static class FeedbackAdapter extends RecyclerView.Adapter<FeedbackAdapter.ViewHolder> {
+        private List<Feedback> feedbacks;
+        private OnDeleteClickListener listener;
+
+        interface OnDeleteClickListener {
+            void onDelete(String feedbackId);
+        }
+
+        FeedbackAdapter(List<Feedback> feedbacks, OnDeleteClickListener listener) {
+            this.feedbacks = feedbacks;
+            this.listener = listener;
+        }
+
+        @NonNull
+        @Override
+        public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+            ItemFeedbackBinding itemBinding = ItemFeedbackBinding.inflate(
+                    LayoutInflater.from(parent.getContext()), parent, false);
+            return new ViewHolder(itemBinding);
+        }
+
+        @Override
+        public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
+            Feedback feedback = feedbacks.get(position);
+            holder.binding.feedbackDriverName.setText(feedback.getDriverName());
+            holder.binding.feedbackMessage.setText(feedback.getMessage());
+            
+            java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("MMM dd, HH:mm", java.util.Locale.getDefault());
+            holder.binding.feedbackTimestamp.setText(sdf.format(new java.util.Date(feedback.getTimestamp())));
+
+            holder.binding.deleteFeedbackButton.setOnClickListener(v -> {
+                if (feedback.getId() != null) {
+                    listener.onDelete(feedback.getId());
+                }
+            });
+        }
+
+        @Override
+        public int getItemCount() {
+            return feedbacks.size();
+        }
+
+        static class ViewHolder extends RecyclerView.ViewHolder {
+            ItemFeedbackBinding binding;
+            ViewHolder(ItemFeedbackBinding binding) {
                 super(binding.getRoot());
                 this.binding = binding;
             }

@@ -39,7 +39,10 @@ import com.google.firebase.FirebaseApp;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.winlkar.app.databinding.ActivityDriverBinding;
+import com.winlkar.app.model.Feedback;
 import com.winlkar.app.model.Station;
+import android.widget.EditText;
+import androidx.appcompat.app.AlertDialog;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -197,6 +200,46 @@ public class DriverActivity extends AppCompatActivity implements OnMapReadyCallb
 
         binding.startTripButton.setOnClickListener(v -> startTrip());
         binding.endTripButton.setOnClickListener(v -> endTrip());
+        binding.feedbackButton.setOnClickListener(v -> showFeedbackDialog());
+    }
+
+    private void showFeedbackDialog() {
+        EditText feedbackInput = new EditText(this);
+        feedbackInput.setHint("Write your feedback here...");
+        int padding = (int) (16 * getResources().getDisplayMetrics().density);
+        feedbackInput.setPadding(padding, padding, padding, padding);
+
+        new AlertDialog.Builder(this)
+                .setTitle("Send Feedback")
+                .setView(feedbackInput)
+                .setPositiveButton("Send", (dialog, which) -> {
+                    String message = feedbackInput.getText().toString().trim();
+                    if (!message.isEmpty()) {
+                        sendFeedback(message);
+                    }
+                })
+                .setNegativeButton("Cancel", null)
+                .show();
+    }
+
+    private void sendFeedback(String message) {
+        DatabaseReference feedbackRef = FirebaseDatabase.getInstance().getReference("feedbacks");
+        String feedbackId = feedbackRef.push().getKey();
+
+        // Use currentBusId or "Unknown Driver"
+        String driverName = currentBusId != null ? "Driver " + currentBusId : "Anonymous Driver";
+
+        Feedback feedback = new Feedback(feedbackId, currentBusId, driverName, message, System.currentTimeMillis());
+
+        if (feedbackId != null) {
+            feedbackRef.child(feedbackId).setValue(feedback)
+                    .addOnSuccessListener(aVoid -> {
+                        Toast.makeText(this, "Feedback sent successfully", Toast.LENGTH_SHORT).show();
+                    })
+                    .addOnFailureListener(e -> {
+                        Toast.makeText(this, "Failed to send feedback", Toast.LENGTH_SHORT).show();
+                    });
+        }
     }
 
     private void openPlacePicker(boolean isStart) {
