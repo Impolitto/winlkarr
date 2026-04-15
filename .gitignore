@@ -8,3 +8,8 @@
 .externalNativeBuild
 .cxx
 app/google-services.json
+
+# Node backend
+backend/node_modules/
+backend/.env
+backend/npm-debug.log*
