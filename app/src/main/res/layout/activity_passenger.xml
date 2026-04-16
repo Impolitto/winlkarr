@@ -2,7 +2,8 @@
 <androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:background="@drawable/gradient_bg_blue_cyan">
 
     <androidx.fragment.app.FragmentContainerView
         android:id="@+id/passengerMapContainer"
@@ -14,7 +15,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_margin="16dp"
-        app:cardCornerRadius="28dp"
+        app:cardCornerRadius="24dp"
         app:cardElevation="8dp"
         app:strokeWidth="0dp">
 
@@ -23,15 +24,15 @@
             android:layout_height="wrap_content"
             android:gravity="center_vertical"
             android:orientation="horizontal"
-            android:padding="8dp">
+            android:padding="6dp">
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/searchStationButton"
                 style="@style/Widget.Material3.Button.IconButton"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
                 app:icon="@android:drawable/ic_menu_search"
-                app:tint="?attr/colorPrimary" />
+                app:iconTint="?attr/colorPrimary" />
 
             <TextView
                 android:id="@+id/headerText"
@@ -39,80 +40,92 @@
                 android:layout_height="wrap_content"
                 android:layout_marginStart="8dp"
                 android:layout_weight="1"
-                android:text="Active buses and stations"
-                android:textAppearance="@style/TextAppearance.Material3.TitleMedium" />
+                android:text="Explore Stations"
+                android:textAppearance="@style/TextAppearance.Material3.TitleMedium"
+                android:textColor="?attr/colorOnSurface" />
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/topFeedbackButton"
                 style="@style/Widget.Material3.Button.IconButton"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
                 app:icon="@android:drawable/ic_menu_edit"
-                app:tint="?attr/colorPrimary" />
+                app:iconTint="?attr/colorPrimary" />
 
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/myLocationButton"
-                style="@style/Widget.Material3.Button.IconButton"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                app:icon="@android:drawable/ic_menu_mylocation"
-                app:tint="?attr/colorPrimary" />
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:layout_marginEnd="4dp"
+                app:cardCornerRadius="20dp"
+                app:cardElevation="0dp"
+                app:strokeWidth="0dp">
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/myLocationButton"
+                    style="@style/Widget.Material3.Button.IconButton"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:background="@drawable/gradient_primary"
+                    app:icon="@android:drawable/ic_menu_mylocation"
+                    app:iconTint="@color/white" />
+            </com.google.android.material.card.MaterialCardView>
 
         </LinearLayout>
     </com.google.android.material.card.MaterialCardView>
 
-    <!-- Placeholder for a future bottom sheet if needed -->
     <com.google.android.material.card.MaterialCardView
         android:id="@+id/bottomSheet"
         style="@style/Widget.Material3.CardView.Elevated"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         app:behavior_hideable="false"
-        app:behavior_peekHeight="80dp"
-        app:cardCornerRadius="28dp"
-        app:layout_behavior="com.google.android.material.bottomsheet.BottomSheetBehavior">
+        app:behavior_peekHeight="100dp"
+        app:cardCornerRadius="32dp"
+        app:layout_behavior="com.google.android.material.bottomsheet.BottomSheetBehavior"
+        app:strokeWidth="0dp">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:padding="16dp">
+            android:padding="20dp">
 
             <View
-                android:layout_width="32dp"
+                android:layout_width="40dp"
                 android:layout_height="4dp"
                 android:layout_gravity="center_horizontal"
-                android:layout_marginBottom="16dp"
+                android:layout_marginBottom="20dp"
                 android:background="?attr/colorOutlineVariant" />
 
             <TextView
                 android:id="@+id/bottomSheetTitle"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Choose a ride"
-                android:textAppearance="@style/TextAppearance.Material3.TitleLarge" />
+                android:text="Real-time Tracking"
+                android:textAppearance="@style/TextAppearance.Material3.HeadlineSmall"
+                android:textStyle="bold" />
 
             <TextView
                 android:id="@+id/bottomSheetSubtitle"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="4dp"
-                android:text="Swipe up for more trips"
+                android:text="Select a station to see upcoming buses"
                 android:textAppearance="@style/TextAppearance.Material3.BodyMedium"
-                android:textColor="?attr/colorOnSurfaceVariant" />
+                android:textColor="@color/text_secondary" />
 
             <LinearLayout
                 android:id="@+id/busDetailsContainer"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
+                android:layout_marginTop="20dp"
                 android:orientation="vertical"
                 android:visibility="gone">
 
                 <com.google.android.material.divider.MaterialDivider
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginBottom="12dp" />
+                    android:layout_marginBottom="16dp" />
 
                 <LinearLayout
                     android:id="@+id/tripsList"
@@ -126,14 +139,15 @@
 
             <View
                 android:layout_width="match_parent"
-                android:layout_height="48dp" />
+                android:layout_height="32dp" />
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/sendFeedbackButton"
-                style="@style/Widget.Material3.Button.TextButton"
+                style="@style/Widget.Material3.Button.TonalButton"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Report an Issue / Give Feedback"
+                android:layout_height="56dp"
+                android:text="Report Service Issue"
+                app:cornerRadius="16dp"
                 app:icon="@android:drawable/ic_menu_edit" />
 
         </LinearLayout>

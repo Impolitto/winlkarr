@@ -18,6 +18,8 @@ public class LoginActivity extends AppCompatActivity {
         binding = ActivityLoginBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
 
+        binding.backButton.setOnClickListener(v -> finish());
+
         binding.loginButton.setOnClickListener(v -> {
             String adminId = binding.adminIdInput.getText() != null 
                 ? binding.adminIdInput.getText().toString().trim() : "";

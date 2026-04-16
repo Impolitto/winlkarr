@@ -33,13 +33,13 @@
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:background="@drawable/gradient_purple_indigo"
+            android:background="@drawable/gradient_green_emerald"
             android:gravity="center">
 
             <ImageView
                 android:layout_width="40dp"
                 android:layout_height="40dp"
-                android:src="@android:drawable/ic_lock_lock"
+                android:src="@android:drawable/ic_menu_directions"
                 app:tint="@color/white" />
         </LinearLayout>
     </com.google.android.material.card.MaterialCardView>
@@ -48,7 +48,7 @@
         android:id="@+id/loginTitle"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Admin Portal"
+        android:text="Driver Login"
         android:textSize="28sp"
         android:textStyle="bold"
         android:layout_marginTop="16dp"
@@ -60,7 +60,7 @@
         android:id="@+id/loginSubtitle"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Secure access for system administration"
+        android:text="Enter your credentials to start your trip"
         android:textSize="14sp"
         android:textColor="@color/text_secondary"
         android:layout_marginTop="8dp"
@@ -85,15 +85,15 @@
             android:padding="24dp">
 
             <com.google.android.material.textfield.TextInputLayout
-                android:id="@+id/emailLayout"
+                android:id="@+id/usernameLayout"
                 style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:hint="Admin ID"
+                android:hint="Username"
                 app:startIconDrawable="@android:drawable/ic_menu_myplaces">
 
                 <com.google.android.material.textfield.TextInputEditText
-                    android:id="@+id/adminIdInput"
+                    android:id="@+id/usernameInput"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:inputType="text" />
@@ -121,7 +121,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="64dp"
                 android:layout_marginTop="24dp"
-                android:text="Authorize"
+                android:text="Sign In"
                 android:textAppearance="@style/TextAppearance.Material3.TitleMedium"
                 app:cornerRadius="16dp" />
 

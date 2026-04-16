@@ -1,0 +1,44 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="48dp"
+    android:height="24dp"
+    android:viewportWidth="120"
+    android:viewportHeight="60">
+
+    <!-- Main Body -->
+    <path
+        android:fillColor="#212121"
+        android:pathData="M15,10 L105,10 C110,10 115,15 115,20 L115,40 C115,45 110,50 105,50 L15,50 C10,50 5,45 5,40 L5,20 C5,15 10,10 15,10 Z" />
+
+    <!-- Front Windshield Area -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M10,15 L12,15 C14,15 15,16 15,18 L15,42 C15,44 14,45 12,45 L10,45 C8,45 7,44 7,42 L7,18 C7,16 8,15 10,15 Z" />
+
+    <!-- Driver's Window / Front Roof Hatch -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M22,15 L45,15 C47,15 48,16 48,18 L48,42 C48,44 47,45 45,45 L22,45 C20,45 19,44 19,42 L19,18 C19,16 20,15 22,15 Z" />
+
+    <!-- Roof Hatch 1 -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M55,20 L68,20 C70,20 71,21 71,23 L71,37 C71,39 70,40 68,40 L55,40 C53,40 52,39 52,37 L52,23 C52,21 53,20 55,20 Z" />
+
+    <!-- Roof Hatch 2 -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M78,20 L91,20 C93,20 94,21 94,23 L94,37 C94,39 93,40 91,40 L78,40 C76,40 75,39 75,37 L75,23 C75,21 76,20 78,20 Z" />
+
+    <!-- Roof Hatch 3 -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M101,20 L109,20 C111,20 112,21 112,23 L112,37 C112,39 111,40 109,40 L101,40 C99,40 98,39 98,37 L98,23 C98,21 99,20 101,20 Z" />
+
+    <!-- Details/Side Mirrors -->
+    <path
+        android:fillColor="#212121"
+        android:pathData="M8,8 L12,8 L12,10 L8,10 Z" />
+    <path
+        android:fillColor="#212121"
+        android:pathData="M8,50 L12,50 L12,52 L8,52 Z" />
+</vector>

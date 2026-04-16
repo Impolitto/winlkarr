@@ -22,13 +22,13 @@ public class MainActivity extends AppCompatActivity {
         binding = ActivityMainBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
 
-        binding.driverButton.setOnClickListener(v ->
-                startActivity(new Intent(this, DriverActivity.class)));
+        binding.driverCard.setOnClickListener(v ->
+                startActivity(new Intent(this, DriverLoginActivity.class)));
 
-        binding.passengerButton.setOnClickListener(v ->
+        binding.passengerCard.setOnClickListener(v ->
                 startActivity(new Intent(this, PassengerActivity.class)));
 
-        binding.adminButton.setOnClickListener(v ->
+        binding.adminCard.setOnClickListener(v ->
                 startActivity(new Intent(this, LoginActivity.class)));
     }
 }

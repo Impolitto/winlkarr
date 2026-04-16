@@ -24,6 +24,9 @@
             android:name=".LoginActivity"
             android:exported="false" />
         <activity
+            android:name=".DriverLoginActivity"
+            android:exported="false" />
+        <activity
             android:name=".AdminActivity"
             android:exported="false" />
         <activity

@@ -1,7 +1,7 @@
 package com.winlkar.app.model;
 
 public class Driver {
-    private String driverId;
+    private String username;
     private String name;
     private String password;
     private String assignedBusId;
@@ -9,19 +9,19 @@ public class Driver {
     public Driver() {
     }
 
-    public Driver(String driverId, String name, String password, String assignedBusId) {
-        this.driverId = driverId;
+    public Driver(String username, String name, String password, String assignedBusId) {
+        this.username = username;
         this.name = name;
         this.password = password;
         this.assignedBusId = assignedBusId;
     }
 
-    public String getDriverId() {
-        return driverId;
+    public String getUsername() {
+        return username;
     }
 
-    public void setDriverId(String driverId) {
-        this.driverId = driverId;
+    public void setUsername(String username) {
+        this.username = username;
     }
 
     public String getName() {

@@ -259,7 +259,7 @@ public class AdminActivity extends AppCompatActivity {
 
     private void showAddDriverDialog() {
         View dialogView = getLayoutInflater().inflate(R.layout.dialog_add_driver, null);
-        EditText idInput = dialogView.findViewById(R.id.driverIdInput);
+        EditText usernameInput = dialogView.findViewById(R.id.driverIdInput);
         EditText nameInput = dialogView.findViewById(R.id.driverNameInput);
         EditText passwordInput = dialogView.findViewById(R.id.driverPasswordInput);
         EditText busIdInput = dialogView.findViewById(R.id.assignedBusIdInput);
@@ -268,18 +268,18 @@ public class AdminActivity extends AppCompatActivity {
                 .setTitle("Add Driver Account")
                 .setView(dialogView)
                 .setPositiveButton("Add", (dialog, which) -> {
-                    String id = idInput.getText().toString().trim();
+                    String username = usernameInput.getText().toString().trim();
                     String name = nameInput.getText().toString().trim();
                     String password = passwordInput.getText().toString().trim();
                     String busId = busIdInput.getText().toString().trim();
 
-                    if (!TextUtils.isEmpty(id) && !TextUtils.isEmpty(name) && !TextUtils.isEmpty(password)) {
-                        Driver newDriver = new Driver(id, name, password, busId);
-                        driversRef.child(id).setValue(newDriver)
+                    if (!TextUtils.isEmpty(username) && !TextUtils.isEmpty(name) && !TextUtils.isEmpty(password)) {
+                        Driver newDriver = new Driver(username, name, password, busId);
+                        driversRef.child(username).setValue(newDriver)
                                 .addOnSuccessListener(aVoid -> Toast.makeText(this, "Driver added successfully", Toast.LENGTH_SHORT).show())
                                 .addOnFailureListener(e -> Toast.makeText(this, "Failed to add driver", Toast.LENGTH_SHORT).show());
                     } else {
-                        Toast.makeText(this, "ID, Name and Password are required", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(this, "Username, Name and Password are required", Toast.LENGTH_SHORT).show();
                     }
                 })
                 .setNegativeButton("Cancel", null)
@@ -398,9 +398,9 @@ public class AdminActivity extends AppCompatActivity {
         public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
             Driver driver = drivers.get(position);
             holder.binding.driverNameText.setText(driver.getName());
-            holder.binding.driverIdText.setText("ID: " + driver.getDriverId());
+            holder.binding.driverIdText.setText("User: " + driver.getUsername());
             holder.binding.assignedBusText.setText("Bus: " + (driver.getAssignedBusId() != null && !driver.getAssignedBusId().isEmpty() ? driver.getAssignedBusId() : "Not assigned"));
-            holder.binding.deleteButton.setOnClickListener(v -> listener.onDelete(driver.getDriverId()));
+            holder.binding.deleteButton.setOnClickListener(v -> listener.onDelete(driver.getUsername()));
         }
 
         @Override

@@ -2,6 +2,10 @@ package com.winlkar.app;
 
 import android.os.Bundle;
 import android.animation.ValueAnimator;
+import android.graphics.Bitmap;
+import android.graphics.Canvas;
+import android.graphics.drawable.Drawable;
+import androidx.core.content.ContextCompat;
 import android.view.animation.LinearInterpolator;
 
 import androidx.annotation.NonNull;
@@ -179,6 +183,7 @@ public class PassengerActivity extends AppCompatActivity implements OnMapReadyCa
         googleMap.setPadding(0, topPadding, 0, bottomPadding);
 
         drawStations();
+        preConfigureDemoTrip();
         attachTripsRealtimeListener();
 
         googleMap.setOnMarkerClickListener(marker -> {
@@ -198,7 +203,7 @@ public class PassengerActivity extends AppCompatActivity implements OnMapReadyCa
 
     private void showStationDetails(Station station) {
         binding.bottomSheetTitle.setText(station.name);
-        binding.bottomSheetSubtitle.setText("Nearby buses to " + station.name);
+        binding.bottomSheetSubtitle.setText("Nearby buses at " + station.name);
         binding.busDetailsContainer.setVisibility(android.view.View.VISIBLE);
         binding.tripsList.removeAllViews();
 
@@ -209,7 +214,7 @@ public class PassengerActivity extends AppCompatActivity implements OnMapReadyCa
 
             if (involvesStation) {
                 foundCount++;
-                addTripItem(trip);
+                addTripItem(trip, station.name);
             }
         }
 
@@ -231,12 +236,12 @@ public class PassengerActivity extends AppCompatActivity implements OnMapReadyCa
         binding.busDetailsContainer.setVisibility(android.view.View.VISIBLE);
         binding.tripsList.removeAllViews();
         
-        addTripItem(trip);
+        addTripItem(trip, null);
 
         BottomSheetBehavior.from(binding.bottomSheet).setState(BottomSheetBehavior.STATE_EXPANDED);
     }
 
-    private void addTripItem(ActiveTrip trip) {
+    private void addTripItem(ActiveTrip trip, String referenceStation) {
         android.view.View itemView = getLayoutInflater().inflate(R.layout.item_trip, binding.tripsList, false);
         
         android.widget.TextView busIdTv = itemView.findViewById(R.id.tripBusId);
@@ -245,7 +250,12 @@ public class PassengerActivity extends AppCompatActivity implements OnMapReadyCa
         android.widget.ImageView iconIv = itemView.findViewById(R.id.tripIcon);
 
         busIdTv.setText("Bus " + (trip.getBusId().length() > 8 ? trip.getBusId().substring(0, 8) : trip.getBusId()));
-        destTv.setText("To " + (trip.getRouteTo() != null ? trip.getRouteTo() : "Unknown"));
+        
+        if (referenceStation != null && referenceStation.equals(trip.getRouteTo())) {
+            destTv.setText("From " + (trip.getRouteFrom() != null ? trip.getRouteFrom() : "Unknown"));
+        } else {
+            destTv.setText("To " + (trip.getRouteTo() != null ? trip.getRouteTo() : "Unknown"));
+        }
         
         // Calculate ETA
         Marker busMarker = busMarkers.get(trip.getBusId());
@@ -280,16 +290,37 @@ public class PassengerActivity extends AppCompatActivity implements OnMapReadyCa
             return;
         }
 
+        Bitmap stationIcon = getBitmapFromVectorDrawable(R.drawable.ic_bus_stop_small);
+
         for (Station station : stations) {
-            Marker marker = googleMap.addMarker(new MarkerOptions()
+            MarkerOptions options = new MarkerOptions()
                     .position(station.location)
                     .title(station.name)
-                    .snippet("Station")
-                    .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_ORANGE)));
+                    .snippet("Bus Stop");
+            
+            if (stationIcon != null) {
+                options.icon(BitmapDescriptorFactory.fromBitmap(stationIcon));
+            } else {
+                options.icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_ORANGE));
+            }
+
+            Marker marker = googleMap.addMarker(options);
             if (marker != null) {
                 marker.setTag(station);
             }
         }
+    }
+
+    private Bitmap getBitmapFromVectorDrawable(int drawableId) {
+        Drawable drawable = ContextCompat.getDrawable(this, drawableId);
+        if (drawable == null) return null;
+
+        Bitmap bitmap = Bitmap.createBitmap(drawable.getIntrinsicWidth(),
+                drawable.getIntrinsicHeight(), Bitmap.Config.ARGB_8888);
+        Canvas canvas = new Canvas(bitmap);
+        drawable.setBounds(0, 0, canvas.getWidth(), canvas.getHeight());
+        drawable.draw(canvas);
+        return bitmap;
     }
 
     private void attachTripsRealtimeListener() {
@@ -336,27 +367,30 @@ public class PassengerActivity extends AppCompatActivity implements OnMapReadyCa
         if (googleMap == null) return;
         if (currentRoutePolyline != null) currentRoutePolyline.remove();
 
-        Station start = findStationByName(trip.getRouteFrom());
-        Station end = findStationByName(trip.getRouteTo());
+        PolylineOptions options = new PolylineOptions()
+                .color(android.graphics.Color.parseColor("#2979FF")) // Uber Blue
+                .width(12)
+                .startCap(new RoundCap())
+                .endCap(new RoundCap())
+                .jointType(JointType.ROUND);
 
-        if (start != null && end != null) {
-            // For now, we draw a higher-quality line. 
-            // In a production environment, you would call the Directions API here to get street points.
-            // I've optimized the visual style to be smooth and rounded.
-            currentRoutePolyline = googleMap.addPolyline(new PolylineOptions()
-                    .add(start.location, end.location)
-                    .color(android.graphics.Color.parseColor("#2979FF")) // Uber Blue
-                    .width(12)
-                    .startCap(new RoundCap())
-                    .endCap(new RoundCap())
-                    .jointType(JointType.ROUND));
+        // If it's the demo trip, use the realistic street path
+        if ("DEMO-BUS-7".equals(trip.getBusId()) && !demoPath.isEmpty()) {
+            options.addAll(demoPath);
+        } else {
+            Station start = findStationByName(trip.getRouteFrom());
+            Station end = findStationByName(trip.getRouteTo());
+            if (start != null && end != null) {
+                options.add(start.location, end.location);
+            }
+        }
+
+        if (!options.getPoints().isEmpty()) {
+            currentRoutePolyline = googleMap.addPolyline(options);
             
-            // If the bus is active, let's zoom to the whole path
-            LatLngBounds bounds = new LatLngBounds.Builder()
-                    .include(start.location)
-                    .include(end.location)
-                    .build();
-            googleMap.animateCamera(CameraUpdateFactory.newLatLngBounds(bounds, 200));
+            LatLngBounds.Builder builder = new LatLngBounds.Builder();
+            for (LatLng p : options.getPoints()) builder.include(p);
+            googleMap.animateCamera(CameraUpdateFactory.newLatLngBounds(builder.build(), 200));
         }
     }
 
@@ -397,13 +431,22 @@ public class PassengerActivity extends AppCompatActivity implements OnMapReadyCa
 
         Marker existing = busMarkers.get(trip.getBusId());
         if (existing == null) {
-            Marker marker = googleMap.addMarker(new MarkerOptions()
+            Bitmap busIcon = getBitmapFromVectorDrawable(R.drawable.ic_bus_top_view);
+            MarkerOptions options = new MarkerOptions()
                     .position(newPosition)
                     .title("Bus " + trip.getBusId())
                     .snippet(snippet)
-                    .zIndex(10.0f)
-                    .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_CYAN)));
+                    .zIndex(10.0f);
 
+            if (busIcon != null) {
+                options.icon(BitmapDescriptorFactory.fromBitmap(busIcon));
+                options.anchor(0.5f, 0.5f);
+                options.flat(true);
+            } else {
+                options.icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_CYAN));
+            }
+
+            Marker marker = googleMap.addMarker(options);
             if (marker != null) {
                 marker.setTag(trip.getBusId());
                 busMarkers.put(trip.getBusId(), marker);
@@ -504,6 +547,105 @@ public class PassengerActivity extends AppCompatActivity implements OnMapReadyCa
 
         double c = 2 * Math.atan2(Math.sqrt(h), Math.sqrt(1 - h));
         return earthRadiusKm * c;
+    }
+
+    private final List<LatLng> demoPath = new ArrayList<>();
+
+    private void preConfigureDemoTrip() {
+        // Define a realistic street path along the coast (N1/Corniche)
+        demoPath.clear();
+        demoPath.add(new LatLng(35.8282, 10.6358)); // Sousse Centrale
+        demoPath.add(new LatLng(35.8324, 10.6318)); // Trocadero
+        demoPath.add(new LatLng(35.8385, 10.6335)); // Corniche Start
+        demoPath.add(new LatLng(35.8480, 10.6250)); // Boujaafar
+        demoPath.add(new LatLng(35.8580, 10.6120)); // Hammam Sousse Bridge
+        demoPath.add(new LatLng(35.8750, 10.6020)); // Menchia Area
+        demoPath.add(new LatLng(35.8880, 10.5990)); // Kantaoui Entrance
+        demoPath.add(new LatLng(35.8947, 10.5982)); // Port El Kantaoui
+
+        String busId = "DEMO-BUS-7";
+        LatLng startLoc = demoPath.get(0);
+        
+        ActiveTrip demoTrip = new ActiveTrip();
+        demoTrip.setBusId(busId);
+        demoTrip.setRouteFrom("Sousse Centrale");
+        demoTrip.setRouteTo("Port El Kantaoui");
+        demoTrip.setRouteDescription("Sousse Centrale -> Port El Kantaoui");
+        demoTrip.setLat(startLoc.latitude);
+        demoTrip.setLng(startLoc.longitude);
+        demoTrip.setActive(true);
+
+        activeTrips.put(busId, demoTrip);
+
+        if (googleMap != null) {
+            Bitmap busIcon = getBitmapFromVectorDrawable(R.drawable.ic_bus_top_view);
+            MarkerOptions options = new MarkerOptions()
+                    .position(startLoc)
+                    .title("Bus " + busId)
+                    .snippet("Route: " + demoTrip.getRouteDescription() + "\nStatus: DEMO")
+                    .zIndex(10.0f);
+            
+            if (busIcon != null) {
+                options.icon(BitmapDescriptorFactory.fromBitmap(busIcon));
+                options.anchor(0.5f, 0.5f);
+                options.flat(true);
+            }
+
+            Marker marker = googleMap.addMarker(options);
+            if (marker != null) {
+                marker.setTag(busId);
+                busMarkers.put(busId, marker);
+                startDemoAnimationAlongPath(marker, demoPath);
+            }
+        }
+    }
+
+    private void startDemoAnimationAlongPath(Marker marker, List<LatLng> path) {
+        ValueAnimator animator = ValueAnimator.ofFloat(0f, path.size() - 1);
+        animator.setDuration(60000); // 1 minute trip
+        animator.setRepeatCount(ValueAnimator.INFINITE);
+        animator.setRepeatMode(ValueAnimator.REVERSE);
+        animator.setInterpolator(new LinearInterpolator());
+        animator.addUpdateListener(animation -> {
+            float fraction = (float) animation.getAnimatedValue();
+            int index = (int) fraction;
+            float nextFraction = fraction - index;
+
+            if (index < path.size() - 1) {
+                LatLng start = path.get(index);
+                LatLng end = path.get(index + 1);
+
+                double lat = start.latitude + (end.latitude - start.latitude) * nextFraction;
+                double lng = start.longitude + (end.longitude - start.longitude) * nextFraction;
+                LatLng newPos = new LatLng(lat, lng);
+
+                marker.setPosition(newPos);
+                
+                // Calculate bearing to rotate the bus correctly
+                float bearing = getBearing(start, end);
+                // Adjust rotation because our bus icon "front" is on the right side (90 deg)
+                marker.setRotation(bearing - 90);
+
+                ActiveTrip trip = activeTrips.get("DEMO-BUS-7");
+                if (trip != null) {
+                    trip.setLat(lat);
+                    trip.setLng(lng);
+                }
+            }
+        });
+        animator.start();
+    }
+
+    private float getBearing(LatLng start, LatLng end) {
+        double lat1 = Math.toRadians(start.latitude);
+        double lon1 = Math.toRadians(start.longitude);
+        double lat2 = Math.toRadians(end.latitude);
+        double lon2 = Math.toRadians(end.longitude);
+
+        double dLon = lon2 - lon1;
+        double y = Math.sin(dLon) * Math.cos(lat2);
+        double x = Math.cos(lat1) * Math.sin(lat2) - Math.sin(lat1) * Math.cos(lat2) * Math.cos(dLon);
+        return (float) ((Math.toDegrees(Math.atan2(y, x)) + 360) % 360);
     }
 
     private void updateActiveBusesCount() {
